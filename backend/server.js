@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const { connectDB } = require("./config/dbConfig");
 const { sendVerificationLink } = require('./utils/firebaseAuth');
+const errorHandler = require('./middleware/errorMiddleware');
 
 const app = express();
 
@@ -27,6 +28,8 @@ app.post('/api/test-firebase', async (req, res) => {
   }
 });
 
+
+app.use(errorHandler);
 const PORT = process.env.PORT;
 
 app.listen(PORT, () => {
