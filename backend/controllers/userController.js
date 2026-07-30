@@ -51,13 +51,13 @@ const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ where: { email } });
   if (!user) {
     res.status(400);
-    throw new Error('Invalid credentials');
+    throw new Error('User not found');
   }
 
   const isPasswordCorrect = await bcrypt.compare(password, user.password);
   if (!isPasswordCorrect) {
     res.status(400);
-    throw new Error('Invalid credentials');
+    throw new Error('Invalid password');
   }
 
   if (!user.isVerified) {
