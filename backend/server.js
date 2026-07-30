@@ -5,7 +5,10 @@ const { connectDB } = require("./config/dbConfig");
 const { sendVerificationLink } = require('./utils/firebaseAuth');
 const errorHandler = require('./middleware/errorMiddleware');
 
+const userRoutes = require('./routes/userRoutes');
+
 const app = express();
+
 
 app.use(express.json());
 app.use(cors());
@@ -27,7 +30,7 @@ app.post('/api/test-firebase', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
+app.use('/api/users', userRoutes);
 
 app.use(errorHandler);
 const PORT = process.env.PORT;
