@@ -52,19 +52,19 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-const user = await User.findOne({ where: { email } });
+  const user = await User.findOne({ where: { email } });
 
-if (!user) {
-  res.status(400);
-  throw new Error('Invalid credentials');
-}
+  if (!user) {
+    res.status(400);
+    throw new Error('Invalid credentials');
+  }
 
-const isPasswordCorrect = await bcrypt.compare(password, user.password);
+  const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
-if (!isPasswordCorrect) {
-  res.status(400);
-  throw new Error('Invalid credentials');
-}
+  if (!isPasswordCorrect) {
+    res.status(400);
+    throw new Error('Invalid credentials');
+  }
 
   if (!user.isVerified) {
     await sendVerificationLink(user.email);
@@ -79,9 +79,15 @@ if (!isPasswordCorrect) {
     { expiresIn: '7d' }
   );
 
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
   res.status(200).json({
     message: 'Login successful',
-    token,
     user: {
       id: user.id,
       name: user.name,
@@ -115,11 +121,11 @@ const verifyEmail = asyncHandler(async (req, res) => {
   );
 
   res.cookie('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  httpOnly: true,
+  secure: false,
+  sameSite: 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+});
 
   res.status(200).json({
     message: 'Email verified successfully',
@@ -143,4 +149,4 @@ const getProfile = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { registerUser, loginUser, verifyEmail,getProfile };
+module.exports = { registerUser, loginUser, verifyEmail, getProfile };

@@ -1,6 +1,6 @@
 const { getAuth, sendSignInLinkToEmail } = require('firebase/auth');
 const firebaseApp = require('../config/firebaseConfig');
-const admin = require('../config/firebaseAdmin');
+const adminAuth = require('../config/firebaseAdmin');
 
 const auth = getAuth(firebaseApp);
 
@@ -14,7 +14,7 @@ const sendVerificationLink = async (email) => {
 };
 
 const verifyIdToken = async (idToken) => {
-  const decodedToken = await admin.auth().verifyIdToken(idToken);
+  const decodedToken = await adminAuth.verifyIdToken(idToken);
   return decodedToken;
 };
 
