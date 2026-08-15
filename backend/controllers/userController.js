@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { sequelize, User, Company } = require('../models/index');
+const { sequelize, User, Company,Job } = require('../models/index');
 const { sendVerificationLink, verifyIdToken } = require('../utils/firebaseAuth');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -206,4 +206,38 @@ const editProfile = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { registerUser, loginUser, verifyEmail, getProfile,getProfileById,editProfile };
+const deleteProfile = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+
+  const user = await User.findByPk(userId);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  await sequelize.transaction(async (t) => {
+    user.isActive = false;
+    await user.save({ transaction: t });
+
+    if (user.role === 'JobProvider') {
+      const company = await Company.findOne({ where: { userId: user.id } });
+
+      if (company) {
+        company.isActive = false;
+        await company.save({ transaction: t });
+
+        await Job.update(
+          { status: 'Closed' },
+          { where: { companyId: company.id }, transaction: t }
+        );
+      }
+    }
+  });
+
+  res.status(200).json({
+    message: 'Account deactivated successfully',
+  });
+});
+
+module.exports = { registerUser, loginUser, verifyEmail, getProfile,getProfileById,editProfile,deleteProfile };

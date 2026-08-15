@@ -28,6 +28,11 @@ const Company = sequelize.define("Company", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  isActive: {
+  type: DataTypes.BOOLEAN,
+  allowNull: false,
+  defaultValue: true,
+},
 });
 
 module.exports = Company;
