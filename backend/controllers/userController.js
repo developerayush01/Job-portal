@@ -88,12 +88,6 @@ const loginUser = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     message: 'Login successful',
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
   });
 });
 
@@ -149,4 +143,67 @@ const getProfile = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { registerUser, loginUser, verifyEmail, getProfile };
+const getProfileById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  console.log('Requested ID:', id);
+
+  const user = await User.findByPk(id, {
+    attributes: ['name', 'email', 'role'],
+    include: [
+      {
+        association: 'companies',
+        attributes: ['name', 'description', 'logoUrl', 'website', 'location'],
+      },
+    ],
+  });
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  res.status(200).json(user);
+});
+
+const editProfile = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const { name, email, password, companyName, companyDescription, companyLocation, companyWebsite } = req.body;
+
+  const user = await User.findByPk(userId);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  if (email && email !== user.email) {
+    const emailTaken = await User.findOne({ where: { email } });
+    if (emailTaken) {
+      res.status(400);
+      throw new Error('Email already in use');
+    }
+  }
+
+  if (name) user.name = name;
+  if (email) user.email = email;
+  if (password) user.password = await bcrypt.hash(password, 10);
+
+  await user.save();
+
+  if (user.role === 'JobProvider') {
+    const company = await Company.findOne({ where: { userId: user.id } });
+
+    if (companyName) company.name = companyName;
+    if (companyDescription) company.description = companyDescription;
+    if (companyLocation) company.location = companyLocation;
+    if (companyWebsite) company.website = companyWebsite;
+
+    await company.save();
+  }
+
+  res.status(200).json({
+    message: 'Profile updated successfully',
+  });
+});
+
+module.exports = { registerUser, loginUser, verifyEmail, getProfile,getProfileById,editProfile };
