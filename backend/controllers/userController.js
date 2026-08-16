@@ -66,6 +66,11 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new Error('Invalid credentials');
   }
 
+  if (!user.isActive) {
+    res.status(403);
+    throw new Error('This account has been deactivated');
+  }
+  
   if (!user.isVerified) {
     await sendVerificationLink(user.email);
     return res.status(403).json({
@@ -240,4 +245,16 @@ const deleteProfile = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { registerUser, loginUser, verifyEmail, getProfile,getProfileById,editProfile,deleteProfile };
+const logoutUser = asyncHandler(async (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
+
+  res.status(200).json({
+    message: 'Logged out successfully',
+  });
+});
+
+module.exports = { registerUser, loginUser, verifyEmail, getProfile,getProfileById,editProfile,deleteProfile,logoutUser };
