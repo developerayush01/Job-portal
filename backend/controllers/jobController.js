@@ -56,4 +56,83 @@ const createJob = asyncHandler(async (req, res) => {
   return res.status(201).json({ message: 'Job created successfully', job });
 });
 
-module.exports = { createJob };
+const editJob = asyncHandler(async (req, res) => {
+  const { jobId } = req.params;
+
+  if (req.user.role !== 'JobProvider') {
+    return res.status(403).json({ message: 'Only job providers can edit jobs' });
+  }
+
+  const job = await Job.findOne({
+    where: { id: jobId },
+    include: [{ model: Company, as: 'company' }],
+  });
+
+  if (!job) {
+    return res.status(404).json({ message: 'Job not found' });
+  }
+
+  if (job.company.userId !== req.user.id) {
+    return res.status(403).json({ message: 'Not Authorized to edit' });
+  }
+
+  if (!job.company.isActive) {
+    return res.status(403).json({ message: 'This company is not active' });
+  }
+
+  const {
+    title,
+    description,
+    location,
+    salary,
+    isNegotiable,
+    experienceLevel,
+    jobType,
+    status,
+  } = req.body;
+
+  job.title = title ?? job.title;
+  job.description = description ?? job.description;
+  job.location = location ?? job.location;
+  job.salary = salary ?? job.salary;
+  job.isNegotiable = isNegotiable ?? job.isNegotiable;
+  job.experienceLevel = experienceLevel ?? job.experienceLevel;
+  job.jobType = jobType ?? job.jobType;
+  job.status = status ?? job.status;
+
+  await job.save();
+
+  return res.status(200).json({ message: 'Job updated successfully', job });
+});
+
+const deleteJob = asyncHandler(async (req, res) => {
+  const { jobId } = req.params;
+
+  if (req.user.role !== 'JobProvider') {
+    return res.status(403).json({ message: 'Only job providers can delete jobs' });
+  }
+
+  const job = await Job.findOne({
+    where: { id: jobId },
+    include: [{ model: Company, as: 'company' }],
+  });
+
+  if (!job) {
+    return res.status(404).json({ message: 'Job not found' });
+  }
+
+  if (job.company.userId !== req.user.id) {
+    return res.status(403).json({ message: 'You do not have permission to delete this job' });
+  }
+
+  if (!job.isActive) {
+    return res.status(400).json({ message: 'Job is already deleted' });
+  }
+
+  job.isActive = false;
+  await job.save();
+
+  return res.status(200).json({ message: 'Job deleted successfully' });
+});
+
+module.exports = { createJob,editJob,deleteJob };
