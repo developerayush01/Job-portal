@@ -135,4 +135,58 @@ const deleteJob = asyncHandler(async (req, res) => {
   return res.status(200).json({ message: 'Job deleted successfully' });
 });
 
-module.exports = { createJob,editJob,deleteJob };
+const getJobById = asyncHandler(async (req, res) => {
+  const { jobId } = req.params;
+
+  const job = await Job.findAll({
+    where: { id: jobId },
+    include: [{ model: Company, as: 'company' }, { model: Category, as: 'category' }],
+  });
+
+  if (!job) {
+    return res.status(404).json({ message: 'Job not found' });
+  }
+
+  if (req.user && req.user.role === 'JobProvider' && job.company.userId !== req.user.id) {
+    return res.status(404).json({ message: 'Job not found' });
+  }
+
+  if (job.isActive && job.company.isActive) {
+    return res.status(200).json({ job });
+  }
+
+  if (req.user && job.company.userId === req.user.id) {
+    return res.status(200).json({ job });
+  }
+
+  return res.status(404).json({ message: 'Job not found' });
+});
+
+const getJobByCategory = asyncHandler(async (req, res) => {
+  const { categoryId } = req.params;
+  
+  const job = await Job.findAll({
+    where: { categoryId: categoryId },
+    include: [{ model: Company, as: 'company' }, { model: Category, as: 'category' }],
+  });
+
+  if (!job) {
+    return res.status(404).json({ message: 'Job not found' });
+  }
+
+  if (req.user && req.user.role === 'JobProvider' && job.company.userId !== req.user.id) {
+    return res.status(404).json({ message: 'Job not found' });
+  }
+
+  if (job.isActive && job.company.isActive) {
+    return res.status(200).json({ job });
+  }
+
+  if (req.user && job.company.userId === req.user.id) {
+    return res.status(200).json({ job });
+  }
+
+  return res.status(404).json({ message: 'Job not found' });
+});
+
+module.exports = { createJob, editJob, deleteJob, getJobById,getJobByCategory };
