@@ -9,6 +9,7 @@ const cookieParser = require('cookie-parser');
 
 const userRoutes = require('./routes/userRoutes');
 const jobRoutes = require('./routes/jobRoutes');
+const companyRoutes = require('./routes/companyRoutes');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.post('/api/test-firebase', async (req, res) => {
 });
 app.use('/api/users', userRoutes);
 app.use('/api/jobs', jobRoutes);
+app.use('/api/company', companyRoutes);
 
 app.use(errorHandler);
 const PORT = process.env.PORT;
