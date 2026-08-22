@@ -1,4 +1,4 @@
-const { Application, Job } = require('../models');
+const { Application, Job,Company,User } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 
 const createApplication = asyncHandler(async (req, res) => {
@@ -206,4 +206,27 @@ const getApplicationByJob = asyncHandler(async (req, res) => {
   return res.status(200).json({ message: 'Applications fetched successfully', applications });
 });
 
-module.exports = { createApplication,editApplication,getApplicationById,getMyApplications,getAllApplications,getApplicationByJob };
+const deleteApplication = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'JobSeeker') {
+    return res.status(403).json({ message: 'Only JobSeekers can delete their applications' });
+  }
+
+  const { id } = req.params;
+
+  const application = await Application.findOne({ where: { id, isActive: true } });
+
+  if (!application) {
+    return res.status(404).json({ message: 'Application not found' });
+  }
+
+  if (application.applicantId !== req.user.id) {
+    return res.status(404).json({ message: 'Application not found' });
+  }
+
+  application.isActive = false;
+  await application.save();
+
+  return res.status(200).json({ message: 'Application deleted successfully' });
+});
+
+module.exports = { createApplication,editApplication,getApplicationById,getMyApplications,getAllApplications,getApplicationByJob,deleteApplication };

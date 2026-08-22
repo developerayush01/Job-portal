@@ -5,10 +5,10 @@ const {createCompany,editCompany,getCompanyById,deleteCompany,getAllCompany}=req
 const { auth } = require('../middleware/authMiddleware');
 
 router.post("/create",auth,createCompany);
+router.get("/my-company",auth,getAllCompany);
 router.put("/:companyId/edit",auth,editCompany);
 router.get("/:companyId",getCompanyById);
 router.delete("/delete/:companyId",auth,deleteCompany);
-router.get("/my-company",auth,getAllCompany);
 
 module.exports=router;
 
