@@ -17,6 +17,11 @@ const Application = sequelize.define('Application', {
     allowNull: false,
     defaultValue: 'Pending',
   },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+  },
 });
 
 module.exports = Application;
