@@ -55,7 +55,8 @@ const authSlice = createSlice({
     user: null,
     isAuthenticated: false,
     loading: false,
-    error: null
+    error: null,
+    registrationMessage: null
   },
   reducers: {
     clearError: (state) => {
