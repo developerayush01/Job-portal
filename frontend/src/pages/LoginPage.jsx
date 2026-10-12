@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser } from '../features/auth/authSlice';
 
 function LoginPage() {
   const dispatch = useDispatch();
-  const { loading, error, user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+  const { loading, error } = useSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -15,9 +17,13 @@ function LoginPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    dispatch(loginUser(formData));
+    const result = await dispatch(loginUser(formData));
+
+    if (loginUser.fulfilled.match(result)) {
+      navigate('/home');
+    }
   };
 
   return (
@@ -50,7 +56,10 @@ function LoginPage() {
         </button>
 
         {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
-        {user && <p className="text-green-600 text-sm mt-3">Welcome, {user.name}</p>}
+
+        <p className="text-sm mt-4">
+          No account? <Link to="/register" className="text-blue-600">Register</Link>
+        </p>
       </form>
     </div>
   );
