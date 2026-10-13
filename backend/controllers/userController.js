@@ -172,43 +172,93 @@ const getProfileById = asyncHandler(async (req, res) => {
 
 const editProfile = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  const { name, email, password, companyName, companyDescription, companyLocation, companyWebsite } = req.body;
+  const { name, email, companyName, companyDescription, companyLocation, companyWebsite } = req.body;
 
   const user = await User.findByPk(userId);
-
   if (!user) {
     res.status(404);
     throw new Error('User not found');
   }
 
-  if (email && email !== user.email) {
+  const emailChanged = email && email !== user.email;
+
+  if (emailChanged) {
     const emailTaken = await User.findOne({ where: { email } });
     if (emailTaken) {
       res.status(400);
       throw new Error('Email already in use');
     }
+
+    await sendVerificationLink(email);
+
+    user.email = email;
+    user.isVerified = false;
   }
 
   if (name) user.name = name;
-  if (email) user.email = email;
-  if (password) user.password = await bcrypt.hash(password, 10);
 
   await user.save();
 
   if (user.role === 'JobProvider') {
     const company = await Company.findOne({ where: { userId: user.id } });
 
-    if (companyName) company.name = companyName;
-    if (companyDescription) company.description = companyDescription;
-    if (companyLocation) company.location = companyLocation;
-    if (companyWebsite) company.website = companyWebsite;
+    if (company) {
+      if (companyName) company.name = companyName;
+      if (companyDescription) company.description = companyDescription;
+      if (companyLocation) company.location = companyLocation;
+      if (companyWebsite) company.website = companyWebsite;
+      await company.save();
+    }
+  }
 
-    await company.save();
+  if (emailChanged) {
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+
+    return res.status(200).json({
+      message: 'Profile updated. Verify your new email, then log in again.',
+      emailChanged: true,
+    });
   }
 
   res.status(200).json({
     message: 'Profile updated successfully',
+    emailChanged: false,
   });
+});
+
+const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    res.status(400);
+    throw new Error('Current and new password are required');
+  }
+
+  const user = await User.findByPk(req.user.id);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    res.status(400);
+    throw new Error('Current password is incorrect');
+  }
+
+  if (currentPassword === newPassword) {
+    res.status(400);
+    throw new Error('New password must be different from the current one');
+  }
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+
+  res.status(200).json({ message: 'Password changed successfully' });
 });
 
 const deleteProfile = asyncHandler(async (req, res) => {
@@ -240,6 +290,16 @@ const deleteProfile = asyncHandler(async (req, res) => {
     }
   });
 
+    res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
+
+  res.status(200).json({
+    message: 'Account deactivated successfully',
+  });
+
   res.status(200).json({
     message: 'Account deactivated successfully',
   });
@@ -257,4 +317,4 @@ const logoutUser = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { registerUser, loginUser, verifyEmail, getProfile,getProfileById,editProfile,deleteProfile,logoutUser };
+module.exports = { registerUser, loginUser, verifyEmail, getProfile, getProfileById, editProfile, changePassword, deleteProfile, logoutUser };

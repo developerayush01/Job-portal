@@ -6,8 +6,7 @@ import { loginUser } from '../features/auth/authSlice';
 function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state) => state.auth);
-
+  const { loading, error, notice } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -57,6 +56,7 @@ function LoginPage() {
 
         {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
 
+        {notice && <p className="text-green-600 text-sm mt-3">{notice}</p>}
         <p className="text-sm mt-4">
           No account? <Link to="/register" className="text-blue-600">Register</Link>
         </p>
